@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seismic Co-render Tools</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2330; --muted: #5b6475;
+    --line: #dde2ea; --accent: #0a7f45; --accent-fg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d0f17; --panel: #161925; --fg: #e6e8f0; --muted: #a3a9bb;
+      --line: #2a2e42; --accent: #00b86b; --accent-fg: #06110b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0f17; --panel: #161925; --fg: #e6e8f0; --muted: #a3a9bb;
+    --line: #2a2e42; --accent: #00b86b; --accent-fg: #06110b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 40px 16px 24px; }
+  h1 { font-size: 1.7rem; margin: 0 0 6px; }
+  .lead { color: var(--muted); margin: 0 0 28px; max-width: 62ch; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;
+          display: flex; flex-direction: column; }
+  .card h2 { font-size: 1.15rem; margin: 0 0 4px; }
+  .card .for { color: var(--muted); font-size: .9em; margin: 0 0 12px; }
+  .card ul { margin: 0 0 18px; padding-left: 18px; flex: 1; }
+  .card li { margin: 3px 0; }
+  .btn { display: inline-block; text-align: center; text-decoration: none; font-weight: 600;
+         background: var(--accent); color: var(--accent-fg); border-radius: 7px; padding: 10px 14px; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+  .notes { margin-top: 28px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+  .notes h2 { font-size: 1rem; margin: 0 0 6px; }
+  .notes ul { margin: 0; padding-left: 18px; }
+  .notes li { margin: 4px 0; }
+  footer { max-width: 880px; margin: 0 auto; padding: 18px 16px 32px; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: .85em; }
+  footer p { margin: 0 0 6px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Seismic Co-render Tools</h1>
+  <p class="lead">Co-render three seismic attribute volumes (SEG-Y) as one colour image, with inline,
+    crossline and time-slice views. The blending matches the Ternary Colormap Tool: direct RGB,
+    ternary (LAB) or HSV.</p>
+
+  <div class="cards">
+    <section class="card">
+      <h2>Simple</h2>
+      <p class="for">Start here — the essentials, quick to learn.</p>
+      <ul>
+        <li>Direct RGB, ternary (LAB) and HSV blending</li>
+        <li>Corner-colour presets, including colour-blind-safe sets</li>
+        <li>Clip %, weight and invert for each volume</li>
+        <li>Colour key, and save the view as PNG</li>
+      </ul>
+      <a class="btn" href="SEGY_Corender_simple_V5.html">Open the simple tool</a>
+    </section>
+
+    <section class="card">
+      <h2>Advanced</h2>
+      <p class="for">Everything in Simple, plus finer control.</p>
+      <ul>
+        <li>A histogram per volume — drag the lines to set the range</li>
+        <li>A colour map per volume (52 maps), or your own .alut maps</li>
+        <li>Two volumes: an attribute in colour over a base in grey</li>
+        <li>Overlay opacity and threshold</li>
+      </ul>
+      <a class="btn" href="SEGY_co-render_advanced_V5.html">Open the advanced tool</a>
+    </section>
+  </div>
+
+  <section class="notes">
+    <h2>Before you start</h2>
+    <ul>
+      <li>Use Chrome or Edge. The tools also work offline: download the HTML file and double-click it.</li>
+      <li>The three volumes must be on the same grid. Check the inline and crossline byte locations with <b>View file headers</b>.</li>
+      <li>Your data stays on your computer. Files are read in your browser and never uploaded.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <p>Built for teaching by Dr. April Moreno-Ward and Dr. Heather Bedle, University of Oklahoma, with the <a href="https://www.ou.edu/mcee/labs/aaspi" target="_blank" rel="noopener">AASPI</a> consortium.</p>
+  <p>Licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Free to use, adapt and share, including in teaching, provided the source is credited and any adaptation is released under the same license.</p>
+</footer>
+</body>
+</html>
