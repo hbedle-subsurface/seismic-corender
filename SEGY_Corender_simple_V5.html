@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEG-Y Co-render</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2330; --muted: #5b6475;
+    --line: #dde2ea; --accent: #0a7f45; --accent-fg: #ffffff; --warn: #a15c00;
+    --bad: #b3261e; --input: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d0f17; --panel: #161925; --fg: #e6e8f0; --muted: #a3a9bb;
+      --line: #2a2e42; --accent: #00b86b; --accent-fg: #06110b; --warn: #f2c063;
+      --bad: #ff7a70; --input: #1d2132;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0f17; --panel: #161925; --fg: #e6e8f0; --muted: #a3a9bb;
+    --line: #2a2e42; --accent: #00b86b; --accent-fg: #06110b; --warn: #f2c063;
+    --bad: #ff7a70; --input: #1d2132;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { margin: 0; font-size: 1.15rem; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: .9em; }
+  .tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 10px;
+         font-size: .75rem; font-weight: 600; background: var(--warn); color: var(--panel); vertical-align: middle; }
+  .wrap { display: grid; grid-template-columns: 340px 1fr; gap: 14px; padding: 14px 16px; }
+  @media (max-width: 880px) { .wrap { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .panel + .panel { margin-top: 12px; }
+  h2 { font-size: .95rem; margin: 0 0 8px; }
+  label { display: block; color: var(--muted); font-size: .85em; margin: 6px 0 2px; }
+  input[type=number], select { width: 100%; padding: 5px 7px; border: 1px solid var(--line);
+         border-radius: 5px; background: var(--input); color: var(--fg); font: inherit; }
+  input[type=range] { width: 100%; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line);
+           background: var(--input); color: var(--fg); cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .seg { display: flex; margin: 4px 0 8px; }
+  .seg button { border-radius: 0; flex: 1; }
+  .seg button:first-child { border-radius: 6px 0 0 6px; }
+  .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .seg button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .files { list-style: none; padding: 0; margin: 6px 0 0; }
+  .files li { display: flex; gap: 6px; align-items: center; padding: 3px 0;
+              border-bottom: 1px solid var(--line); font-size: .86em; overflow-wrap: anywhere; }
+  .files li .st { color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .muted { color: var(--muted); font-size: .86em; }
+  .ok { color: var(--accent); font-weight: 600; }
+  .warn { color: var(--warn); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  .chan { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-top: 8px; }
+  .chan .hd { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); flex: none; }
+  .chan .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .chk { display: flex; gap: 6px; align-items: center; color: var(--fg); font-size: .88em; margin: 6px 0 0; }
+  .chk input { width: auto; }
+  .viewer { min-width: 0; }
+  .vhead { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .vhead .seg { margin: 0; min-width: 260px; }
+  .vhead input[type=range] { flex: 1; min-width: 160px; width: auto; }
+  #posLabel { min-width: 120px; font-variant-numeric: tabular-nums; }
+  canvas { display: block; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .val { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .85em; }
+  .hide { display: none !important; }
+  footer { padding: 14px 16px 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: .82em; max-width: 1100px; }
+  footer p { margin: 0 0 6px; }
+  footer a { color: var(--accent); }
+  dialog#hdrDlg { width: min(980px, 95vw); border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); padding: 14px; }
+  dialog#hdrDlg::backdrop { background: rgba(0, 0, 0, .45); }
+  #hdrDlg pre { max-height: 38vh; overflow: auto; font: 12px/1.35 ui-monospace, Consolas, monospace; background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin: 6px 0; white-space: pre; }
+  #hdrDlg table { border-collapse: collapse; width: 100%; font-size: .85em; font-variant-numeric: tabular-nums; }
+  #hdrDlg th, #hdrDlg td { border-bottom: 1px solid var(--line); padding: 3px 6px; text-align: right; white-space: nowrap; }
+  #hdrDlg th:nth-child(2), #hdrDlg td:nth-child(2) { text-align: left; white-space: normal; }
+  #hdrDlg tr.cur td { background: color-mix(in srgb, var(--accent) 14%, transparent); font-weight: 600; }
+  #hdrDlg td button { padding: 1px 6px; font-size: .9em; }
+  #hdrDlg .tblwrap { overflow-x: auto; }
+  .topwrap { padding: 14px 16px 0; }
+  .ftop { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 20px; align-items: start; }
+  .ftop p.muted { margin: 6px 0 0; }
+  .ftop .files { max-height: 120px; overflow-y: auto; margin-top: 0; }
+  .wrap { grid-template-columns: 340px minmax(0, 1fr); align-items: stretch; }
+  @media (min-width: 881px) { .viewer > .panel { position: sticky; top: 8px; } }
+  @media (max-width: 880px) { .wrap { grid-template-columns: 1fr; } .viewer { order: -1; } }
+  .tweaks { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0 18px; margin-top: 6px; align-items: end; }
+  .tw { display: contents; }
+  .savebox { padding-top: 10px; }
+  .tweaks input:disabled { opacity: .35; cursor: not-allowed; }
+  .tweaks div:has(> input:disabled) label { opacity: .5; }
+  .tnote { grid-column: 1 / -1; margin: 2px 0 0; }
+  .savebox button { width: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SEG-Y Co-render</h1>
+  <p>Load three attribute volumes on the same grid and co-render them as one colour image: direct RGB, ternary (LAB) or HSV blending, as in the Ternary Colormap Tool. Everything runs on this computer; nothing is uploaded.</p>
+</header>
+<div class="topwrap">
+  <div class="panel">
+    <h2>1 · Files</h2>
+    <div class="ftop">
+      <div>
+        <input type="file" id="fileIn" multiple accept=".sgy,.segy,.SGY,.SEGY">
+        <p class="muted">SEG-Y files. Add as many as you like, then pick three below. All three must be on the same grid.</p>
+      </div>
+      <div>
+        <div class="row">
+        <div><label for="ilb">SEG-Y inline byte</label><input type="number" id="ilb" value="189" min="1" max="237"></div>
+        <div><label for="xlb">SEG-Y crossline byte</label><input type="number" id="xlb" value="193" min="1" max="237"></div>
+      </div>
+        <button id="hdrBtn" type="button" style="margin-top:8px">View file headers</button>
+      </div>
+      
+      <div class="fstat">
+        <ul class="files" id="fileList"></ul>
+      <div class="bar"><i id="prog"></i></div>
+      <div class="muted" id="status" style="margin-top:6px">Choose three or more files.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="side">
+    <div class="panel">
+      <h2>2 · Blend</h2>
+      <label for="mode">Blend mode</label>
+      <select id="mode">
+        <option value="direct">Direct RGB overlay (classic / AASPI-style)</option>
+        <option value="ternary">Ternary proportion (LAB)</option>
+        <option value="hsv">HSV (hue · saturation · value)</option>
+      </select>
+      <div id="presetBox">
+        <label for="preset">Corner colours</label>
+        <select id="preset">
+          <option value="rgb_classic">Red · green · blue (classic)</option>
+          <option value="cmy_classic">Cyan · magenta · yellow</option>
+          <option value="wong_blue_orange_green">Blue · orange · green (colour-blind safe)</option>
+          <option value="wong_sky_vermillion_yellow">Sky · vermillion · yellow (colour-blind safe)</option>
+          <option value="tol_muted_rose_teal_sand">Rose · teal · sand (muted)</option>
+        </select>
+      </div>
+      <label for="rangeFrom">Colour range of each volume from</label>
+      <select id="rangeFrom">
+        <option value="slice" selected>the slice on screen (as in the ternary tool)</option>
+        <option value="volume">the whole volume (colours stay the same from slice to slice)</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="smooth" checked> Light smoothing before blending (σ 0.5, as in the ternary tool)</label>
+      <p class="muted" id="modeHelp"></p>
+      <div id="chanBox"></div>
+    </div>
+  </div>
+
+  <div class="viewer">
+    <div class="panel">
+      <div class="vhead">
+        <div class="seg" id="viewSeg">
+          <button data-v="inline" class="on">Inline</button>
+          <button data-v="xline">Crossline</button>
+          <button data-v="time">Time slice</button>
+        </div>
+        <input type="range" id="pos" min="0" max="0" value="0">
+        <span id="posLabel"></span>
+        <label class="chk" style="margin:0"><input type="checkbox" id="flipV"> Inline numbers increase upward (time slice)</label>
+      </div>
+      <div class="muted" id="viewNote" style="margin-bottom:6px"></div>
+      <canvas id="cv" height="560"></canvas>
+      <div class="tweaks">
+          <div id="satBox" class="tw"><div><label for="sat">Saturation <span class="val" id="satV"></span></label><input type="range" id="sat" min="0" max="2.5" step="0.05" value="1"></div></div>
+          <div id="ternBox" class="tw">
+            <div><label for="gamma">Gamma <span class="val" id="gammaV"></span></label><input type="range" id="gamma" min="0.5" max="3" step="0.1" value="1.2"></div>
+            <div><label for="mag">Brightness from magnitude <span class="val" id="magV"></span></label><input type="range" id="mag" min="0" max="1" step="0.05" value="0.6"></div>
+            <div><label for="base">Base lightness <span class="val" id="baseV"></span></label><input type="range" id="base" min="0.3" max="1.2" step="0.05" value="0.85"></div>
+            <div id="ternNote" class="muted tnote">Gamma, brightness from magnitude and base lightness are used in <b>Ternary</b> mode only (as in the ternary tool). Choose Ternary as the blend mode to use them.</div>
+          </div>
+          <div id="hsvBox" class="hide tw">
+            <div><label for="h0">Hue at low (0–1) <span class="val" id="h0V"></span></label><input type="range" id="h0" min="0" max="1" step="0.01" value="0.66"></div>
+            <div><label for="h1">Hue at high (0–1) <span class="val" id="h1V"></span></label><input type="range" id="h1" min="0" max="1" step="0.01" value="0"></div>
+          </div>
+          <div class="savebox"><button type="button" id="resetLook" title="Put the sliders under the image back to their starting values (or double-click any one slider)">Reset sliders to defaults</button></div>
+          <div class="savebox"><button class="primary" id="savePng" disabled title="Saves the image with its axes and colour key">Save the view as PNG</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog id="hdrDlg">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <h2 style="margin:0;flex:1">File headers</h2>
+    <select id="hdrSel" style="width:auto;max-width:60%"></select>
+    <button id="hdrClose" type="button">Close</button>
+  </div>
+  <div id="hdrBody"></div>
+</dialog>
+
+<footer>
+  <p>Built for teaching by Dr. April Moreno-Ward and Dr. Heather Bedle, University of Oklahoma, with the <a href="https://www.ou.edu/mcee/labs/aaspi" target="_blank" rel="noopener">AASPI</a> consortium.</p>
+  <p>To cite: A. Moreno-Ward and H. Bedle, 2026, SEG-Y Co-render Tool (simple version).</p>
+  <p>Licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Free to use, adapt and share, including in teaching, provided the source is credited and any adaptation is released under the same license. If you use it in a course or a talk, a credit line and a link back are all that is asked.</p>
+  <p>Nothing you load leaves your computer: the files are read in your browser, and the tool records nothing — no cookie, no account, nothing about you.</p>
+</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const CHUNK = 24 * 1024 * 1024;
+const PREVIEW_FLOATS = window.__previewFloats || 25e6;   // per channel (≈100 MB)
+const BPS = {1: 4, 2: 4, 3: 2, 5: 4, 8: 1, 6: 8};
+const IBM_EXP = new Float64Array(128);
+for (let e = 0; e < 128; e++) IBM_EXP[e] = Math.pow(16, e - 64);
+
+function sampleReader(fmt, le) {
+  switch (fmt) {
+    case 1: return (dv, o) => { const u = dv.getUint32(o, le), f = u & 0xffffff; if (!f) return 0;
+      const v = f / 16777216 * IBM_EXP[(u >>> 24) & 0x7f]; return (u >>> 31) ? -v : v; };
+    case 5: return (dv, o) => dv.getFloat32(o, le);
+    case 2: return (dv, o) => dv.getInt32(o, le);
+    case 3: return (dv, o) => dv.getInt16(o, le);
+    case 8: return (dv, o) => dv.getInt8(o);
+    case 6: return (dv, o) => dv.getFloat64(o, le);
+  }
+  throw new Error('Unsupported sample format ' + fmt);
+}
+
+// ───────────── volumes: a common description for every file type ─────────────
+// vol: {name, kind, file (data), dataStart, traceLen, sOff, bps, le, rd, ns, t0, dt, ntr, g, prev, dec, nsd, sample}
+async function openSegy(file) {
+  const dv = new DataView(await file.slice(0, 3600).arrayBuffer());
+  let le = false, fmt = dv.getInt16(3224, false);
+  if (!(fmt in BPS)) { const f2 = dv.getInt16(3224, true);
+    if (f2 in BPS) { le = true; fmt = f2; } else throw new Error(`${file.name}: unknown sample format (${fmt})`); }
+  const dtus = dv.getUint16(3216, le); let ns = dv.getUint16(3220, le);
+  let ext = dv.getInt16(3504, le); if (ext < 0 || ext > 100) ext = 0;
+  const dataStart = 3600 + 3200 * ext;
+  const th = new DataView(await file.slice(dataStart, dataStart + 240).arrayBuffer());
+  if (!ns) ns = th.getUint16(114, le);
+  const bps = BPS[fmt], traceLen = 240 + ns * bps, ntrF = (file.size - dataStart) / traceLen;
+  if (!ns || !dtus) throw new Error(`${file.name}: missing sample count or interval`);
+  if (Math.abs(ntrF - Math.round(ntrF)) > 1e-9) throw new Error(`${file.name}: variable trace length is not supported`);
+  return {name: file.name, kind: 'SEG-Y', file, dataStart, traceLen, sOff: 240, bps, le, fmt,
+          rd: sampleReader(fmt, le), ns, t0: th.getInt16(108, le), dt: dtus / 1000, ntr: Math.round(ntrF)};
+}
+
+
+// Read every trace once: inline/crossline numbers (SEG-Y) and a time-decimated preview.
+async function scan(vol, withPreview, onProg, token) {
+  const ilo = state.ilb - 1, xlo = state.xlb - 1, seg = !vol.fixedGrid;
+  const il = seg ? new Int32Array(vol.ntr) : null, xl = seg ? new Int32Array(vol.ntr) : null;
+  let dec = 1, nsd = vol.ns, prev = null;
+  if (withPreview) { dec = Math.max(1, Math.ceil(vol.ntr * vol.ns / PREVIEW_FLOATS)); nsd = Math.ceil(vol.ns / dec);
+    prev = new Float32Array(vol.ntr * nsd); }
+  if (!seg && !withPreview) return;
+  const per = Math.max(1, Math.floor(CHUNK / vol.traceLen));
+  for (let t0 = 0; t0 < vol.ntr; t0 += per) {
+    if (token && token.cancel) return null;
+    const n = Math.min(per, vol.ntr - t0), off = vol.dataStart + t0 * vol.traceLen;
+    const dv = new DataView(await vol.file.slice(off, off + n * vol.traceLen).arrayBuffer());
+    for (let k = 0; k < n; k++) {
+      const b = k * vol.traceLen;
+      if (seg) { il[t0 + k] = dv.getInt32(b + ilo, vol.le); xl[t0 + k] = dv.getInt32(b + xlo, vol.le); }
+      if (prev) { const s0 = b + vol.sOff, p0 = (t0 + k) * nsd;
+        for (let j = 0, s = 0; s < vol.ns; j++, s += dec) prev[p0 + j] = vol.rd(dv, s0 + s * vol.bps); }
+    }
+    onProg && onProg((t0 + n) / vol.ntr);
+  }
+  if (token && token.cancel) return null;   // a newer read has started: don't keep results from old settings
+  if (seg) {
+    const uil = Array.from(new Set(il)).sort((a, b) => a - b), uxl = Array.from(new Set(xl)).sort((a, b) => a - b);
+    const mil = new Map(uil.map((v, i) => [v, i])), mxl = new Map(uxl.map((v, i) => [v, i]));
+    const nil = uil.length, nxl = uxl.length, grid = new Int32Array(nil * nxl).fill(-1); let dup = 0;
+    for (let t = 0; t < vol.ntr; t++) { const g = mil.get(il[t]) * nxl + mxl.get(xl[t]); if (grid[g] < 0) grid[g] = t; else dup++; }
+    vol.g = {uil, uxl, nil, nxl, grid, dup};
+  }
+  if (prev) {
+    vol.prev = prev; vol.dec = dec; vol.nsd = nsd;
+    const step = Math.max(1, Math.floor(prev.length / 300000)), smp = [];
+    for (let i = 0; i < prev.length; i += step) if (Number.isFinite(prev[i])) smp.push(prev[i]);
+    vol.sample = Float32Array.from(smp).sort();
+  }
+  return vol;
+}
+async function readTraces(vol, trs) {
+  const out = new Map(), sorted = trs.filter(t => t >= 0).sort((a, b) => a - b);
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i; while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1 && j - i < 4000) j++;
+    const off = vol.dataStart + sorted[i] * vol.traceLen;
+    const dv = new DataView(await vol.file.slice(off, off + (j - i + 1) * vol.traceLen).arrayBuffer());
+    for (let k = i; k <= j; k++) { const b = (k - i) * vol.traceLen + vol.sOff, a = new Float32Array(vol.ns);
+      for (let s = 0; s < vol.ns; s++) a[s] = vol.rd(dv, b + s * vol.bps); out.set(sorted[k], a); }
+    i = j + 1;
+  }
+  return out;
+}
+async function readTimeSlice(vol, s, token) {
+  const v = new Float32Array(vol.ntr), per = Math.max(1, Math.floor(CHUNK / vol.traceLen));
+  for (let t0 = 0; t0 < vol.ntr; t0 += per) {
+    if (token.cancel) return null;
+    const n = Math.min(per, vol.ntr - t0), off = vol.dataStart + t0 * vol.traceLen;
+    const dv = new DataView(await vol.file.slice(off, off + n * vol.traceLen).arrayBuffer());
+    for (let k = 0; k < n; k++) v[t0 + k] = vol.rd(dv, k * vol.traceLen + vol.sOff + s * vol.bps);
+  }
+  return v;
+}
+
+// ───────────── state & files ─────────────
+const state = {vols: [], chan: [0, 1, 2], ilb: 189, xlb: 193, view: 'time', pos: {inline: -1, xline: -1, time: -1}, img: null};
+const CH = [{lo: 1, hi: 99, inv: false, w: 1}, {lo: 1, hi: 99, inv: false, w: 1}, {lo: 1, hi: 99, inv: false, w: 1}];
+let scanToken = null, viewToken = {cancel: false}, sliceTimer = null;
+function setStatus(t, cls) { const e = $('status'); e.textContent = t; e.className = 'muted ' + (cls || ''); }
+function setProg(f) { $('prog').style.width = (100 * Math.max(0, Math.min(1, f))) + '%'; }
+function tms(v, s) { return v.t0 + s * v.dt; }
+function chVols() { return state.chan.map(i => state.vols[i]).filter(Boolean); }
+
+$('fileIn').addEventListener('change', async e => {
+  const fs = Array.from(e.target.files || []); e.target.value = '';
+  for (const f of fs) {
+    const n = f.name.toLowerCase();
+    try {
+      if (/\.(sgy|segy)$/.test(n)) state.vols.push(await openSegy(f));
+      
+      else setStatus(`${f.name}: not a supported file`, 'warn');
+    } catch (err) { setStatus(err.message, 'bad'); }
+  }
+  state.chan = [0, 1, 2].map(i => Math.min(i, state.vols.length - 1));
+  buildChanUI(); await prepare();
+});
+for (const id of ['ilb', 'xlb']) $(id).addEventListener('change', async () => {
+  state.ilb = +$('ilb').value; state.xlb = +$('xlb').value;
+  state.vols.forEach(v => { if (!v.fixedGrid) { v.g = null; v.prev = null; } }); await prepare();
+});
+
+async function prepare() {
+  if (scanToken) scanToken.cancel = true;
+  const token = scanToken = {cancel: false};
+  renderFiles();
+  const need = new Set(state.chan.filter(i => i >= 0));
+  state.vols.forEach((v, i) => { if (!need.has(i)) { v.prev = null; v.sample = null; } });   // free memory
+  for (const i of need) {
+    const v = state.vols[i]; if (!v || v.prev) continue;
+    setStatus(`Reading ${v.name}…`);
+    const t = performance.now();
+    const r = await scan(v, true, setProg, token); if (r === null) return;
+    setStatus(`${v.name}: read in ${((performance.now() - t) / 1000).toFixed(1)} s`); renderFiles();
+  }
+  setProg(0);
+  const err = gridCheck();
+  if (err) { setStatus(err, 'bad'); $('savePng').disabled = true; return; }
+  if (state.vols.length < 3) setStatus('Add at least three volumes.', 'warn');
+  else { const bad = chVols().find(v => v.kind === 'SEG-Y' && v.g && v.g.dup > 0);
+    if (bad) setStatus(`${bad.name}: ${bad.g.dup.toLocaleString()} traces share an inline/crossline pair with another trace (grid ${bad.g.nil}×${bad.g.nxl}) — the inline/crossline bytes are probably wrong. Click “View file headers” to check.`, 'warn');
+    else setStatus('Ready.', 'ok'); }
+  renderFiles(); setupView();
+}
+function gridCheck() {
+  const vs = chVols(); if (vs.length < 3) return 'Pick three volumes.';
+  if (new Set(state.chan).size < 3) return 'Pick three different volumes.';
+  const a = vs[0];
+  for (const v of vs.slice(1)) {
+    if (!v.g || !a.g) return 'Still reading…';
+    if (v.g.nil !== a.g.nil || v.g.nxl !== a.g.nxl || v.ns !== a.ns || Math.abs(v.dt - a.dt) > 1e-6 ||
+        v.g.uil[0] !== a.g.uil[0] || v.g.uxl[0] !== a.g.uxl[0] || Math.abs(v.t0 - a.t0) > 1e-6)
+      return `${v.name} is not on the same grid as ${a.name} (${v.g.nil}×${v.g.nxl}×${v.ns} vs ${a.g.nil}×${a.g.nxl}×${a.ns}).`;
+  }
+  return '';
+}
+function renderFiles() {
+  const ul = $('fileList'); ul.innerHTML = '';
+  state.vols.forEach((v, i) => {
+    const li = document.createElement('li');
+    const nm = document.createElement('span'); nm.textContent = v.name;
+    const st = document.createElement('span'); st.className = 'st';
+    st.textContent = v.g ? `${v.g.nil}×${v.g.nxl}×${v.ns} · ${v.kind}` : `${v.kind} · ${(v.file.size / 1e6).toFixed(0)} MB`;
+    const rm = document.createElement('button'); rm.textContent = '✕'; rm.title = 'Remove'; rm.style.padding = '0 6px';
+    rm.onclick = () => { state.vols.splice(i, 1); state.chan = state.chan.map(c => c === i ? -1 : c > i ? c - 1 : c)
+      .map((c, k) => c >= 0 ? c : Math.min(k, state.vols.length - 1)); buildChanUI(); prepare(); };
+    li.append(nm, st, rm); ul.append(li);
+  });
+  const a = chVols()[0];
+  if (a && a.g) $('viewNote').textContent = `inlines ${a.g.uil[0]}–${a.g.uil[a.g.nil - 1]} (${a.g.nil}) · crosslines ${a.g.uxl[0]}–${a.g.uxl[a.g.nxl - 1]} (${a.g.nxl}) · ${a.ns} samples at ${+a.dt.toFixed(4)} ms from ${+a.t0.toFixed(3)} ms`;
+}
+
+// ───────────── blend settings ─────────────
+const PRESETS = {
+  rgb_classic: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+  wong_blue_orange_green: [[0, .45, .70], [.90, .62, 0], [0, .62, .45]],
+  wong_sky_vermillion_yellow: [[.34, .71, .91], [.84, .37, 0], [.94, .89, .26]],
+  tol_muted_rose_teal_sand: [[.74, .37, .37], [.07, .62, .62], [.88, .80, .46]],
+  cmy_classic: [[0, 1, 1], [1, 0, 1], [1, 1, 0]],
+};
+const HELP = {
+  direct: 'Each volume drives one colour; the colours add. Bright where all three are high (white with red-green-blue), dark where all are low.',
+  ternary: 'Colour shows the proportions of the three volumes (corners of the triangle = one volume only); brightness from their overall magnitude. Gamma > 1 makes the colours purer.',
+  hsv: 'First volume → hue, second → saturation, third → value (brightness).',
+};
+const CH_ROLE = {direct: ['A', 'B', 'C'], ternary: ['A', 'B', 'C'], hsv: ['Hue', 'Saturation', 'Value']};
+function buildChanUI() {
+  const box = $('chanBox'); box.innerHTML = '';
+  const mode = $('mode').value, cols = PRESETS[$('preset').value];
+  for (let k = 0; k < 3; k++) {
+    const d = document.createElement('div'); d.className = 'chan';
+    const opts = state.vols.map((v, i) => `<option value="${i}"${state.chan[k] === i ? ' selected' : ''}>${v.name.replace(/</g, '&lt;')}</option>`).join('');
+    const c = cols[k].map(x => Math.round(x * 255));
+    d.innerHTML = `<div class="hd"><span class="sw" style="background:${mode === 'hsv' ? 'transparent' : `rgb(${c})`}"></span>${CH_ROLE[mode][k]}</div>
+      <select data-k="${k}" class="chSel">${opts || '<option>— add files —</option>'}</select>
+      <div class="grid3">
+        <div><label>Low clip %</label><input type="number" data-k="${k}" data-f="lo" min="0" max="49" step="0.5" value="${CH[k].lo}"></div>
+        <div><label>High clip %</label><input type="number" data-k="${k}" data-f="hi" min="51" max="100" step="0.5" value="${CH[k].hi}"></div>
+        <div><label>Weight</label><input type="number" data-k="${k}" data-f="w" min="0" max="3" step="0.1" value="${CH[k].w}"></div>
+      </div>
+      <label class="chk"><input type="checkbox" data-k="${k}" data-f="inv"${CH[k].inv ? ' checked' : ''}> Invert (low values bright)</label>
+      <div class="val" id="rng${k}"></div>`;
+    box.append(d);
+  }
+  box.querySelectorAll('.chSel').forEach(s => s.onchange = () => { state.chan[+s.dataset.k] = +s.value; prepare(); });
+  box.querySelectorAll('input[data-f]').forEach(inp => inp.onchange = () => {
+    const k = +inp.dataset.k, f = inp.dataset.f;
+    CH[k][f] = f === 'inv' ? inp.checked : +inp.value; paint();
+  });
+  syncBlendUI();
+}
+function syncBlendUI() {
+  const m = $('mode').value;
+  $('ternBox').classList.toggle('hide', m === 'two');   // always on show for three volumes; only Ternary mode uses them
+  for (const id of ['gamma', 'mag', 'base']) $(id).disabled = m !== 'ternary'; $('ternNote').classList.toggle('hide', m === 'ternary'); $('hsvBox').classList.toggle('hide', m !== 'hsv');
+  $('presetBox').classList.toggle('hide', m === 'hsv'); $('modeHelp').textContent = HELP[m];
+  for (const id of ['gamma', 'mag', 'base', 'h0', 'h1', 'sat']) $(id + 'V').textContent = '(' + (+$(id).value).toFixed(2) + ')';
+}
+$('mode').onchange = () => { buildChanUI(); paint(); };
+$('preset').onchange = () => { buildChanUI(); paint(); };
+for (const id of ['gamma', 'mag', 'base', 'h0', 'h1', 'sat']) $(id).oninput = () => { syncBlendUI(); paint(); };
+
+function quant(sorted, p) { if (!sorted || !sorted.length) return 0;
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(p / 100 * (sorted.length - 1))))]; }
+function chanRange(k) {   // percentiles of the slice on screen, or of the whole volume
+  const st = sliceRange() && state.img && state.img.stats && state.img.stats[k], src = st && st.sorted.length ? st.sorted : state.vols[state.chan[k]].sample;
+  return [quant(src, CH[k].lo), quant(src, CH[k].hi)]; }
+
+// ───────────── colour maths (same as the Ternary tool / clustering tool) ─────────────
+// sRGB ↔ XYZ matrices and D65 white exactly as in scikit-image (used by the ternary tool)
+const XN = 0.95047, YN = 1.0, ZN = 1.08883;
+const XYZ_RGB = [0.412453, 0.35758, 0.180423, 0.212671, 0.71516, 0.072169, 0.019334, 0.119193, 0.950227], RGB_XYZ = [3.2404813432005266, -1.5371515162713183, -0.4985363261688878, -0.9692549499965682, 1.8759900014898907, 0.04155592655829284, 0.055646639135177166, -0.20404133836651123, 1.0573110696453443];
+function lin(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+function gam(c) { c = c < 0 ? 0 : c; return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055; }
+function fL(t) { return t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; }
+function fLi(t) { const t3 = t * t * t; return t3 > 0.008856 ? t3 : (t - 16 / 116) / 7.787; }
+function rgb2lab(r, g, b) {
+  r = lin(r); g = lin(g); b = lin(b);
+  const M = XYZ_RGB, x = (M[0] * r + M[1] * g + M[2] * b) / XN, y = (M[3] * r + M[4] * g + M[5] * b) / YN,
+        z = (M[6] * r + M[7] * g + M[8] * b) / ZN;
+  const fx = fL(x), fy = fL(y), fz = fL(z);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+function lab2rgb(L, a, b) {
+  const fy = (L + 16) / 116, fx = a / 500 + fy, fz = Math.max(0, fy - b / 200);   // negative fz clipped, as skimage's lab2rgb does
+  const x = fLi(fx) * XN, y = fLi(fy) * YN, z = fLi(fz) * ZN, M = RGB_XYZ;
+  const cl = v => Math.min(1, Math.max(0, v));
+  return [cl(gam(M[0] * x + M[1] * y + M[2] * z)), cl(gam(M[3] * x + M[4] * y + M[5] * z)), cl(gam(M[6] * x + M[7] * y + M[8] * z))];
+}
+function hsv2rgb(h, s, v) {
+  h = ((h % 1) + 1) % 1; const i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  return [[v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q]][i % 6];
+}
+function blender(forKey) {
+  const mode = $('mode').value, cols = PRESETS[$('preset').value], sat = +$('sat').value;
+  const gamma = +$('gamma').value, mag = forKey ? 0 : +$('mag').value, base = +$('base').value;
+  const h0 = +$('h0').value, h1 = +$('h1').value;
+  const w = forKey ? [1, 1, 1] : CH.map(c => c.w);
+  const cornerLab = cols.map(c => rgb2lab(...c));
+  const satF = rgb => { if (sat === 1) return rgb; const L = rgb2lab(...rgb); return lab2rgb(L[0], L[1] * sat, L[2] * sat); };
+  if (mode === 'direct') { const m = Math.max(...w) || 1;
+    return (a, b, c) => { const p = [a * w[0] / m, b * w[1] / m, c * w[2] / m], o = [0, 0, 0];
+      for (let k = 0; k < 3; k++) for (let j = 0; j < 3; j++) o[j] += p[k] * cols[k][j];
+      return satF(o.map(v => Math.min(1, Math.max(0, v)))); }; }
+  if (mode === 'ternary') return (a, b, c) => {
+    let x = [a * w[0], b * w[1], c * w[2]], tot = x[0] + x[1] + x[2]; if (tot === 0) tot = 1e-9;
+    x = x.map(v => v / tot);
+    if (gamma !== 1) { x = x.map(v => v > 0 ? Math.pow(v, gamma) : 0); let s = x[0] + x[1] + x[2]; if (s === 0) s = 1e-9; x = x.map(v => v / s); }
+    let L = 0, A = 0, B = 0; for (let k = 0; k < 3; k++) { L += x[k] * cornerLab[k][0]; A += x[k] * cornerLab[k][1]; B += x[k] * cornerLab[k][2]; }
+    // Same steps, in the same order, as the ternary tool: ternary_blend() → apply_saturation()
+    // → apply_magnitude_lightness(), going back to clipped RGB after each step.
+    let rgb = lab2rgb(L, A, B);
+    if (sat !== 1) { const q = rgb2lab(...rgb); rgb = lab2rgb(q[0], q[1] * sat, q[2] * sat); }
+    const mg = forKey ? 0.5 : (a + b + c) / 3, q = rgb2lab(...rgb);   // key: neutral magnitude → base lightness, as in the ternary tool's triangle
+    return lab2rgb(Math.min(100, Math.max(0, q[0] * base * (1 + mag * (2 * mg - 1)))), q[1], q[2]);
+  };
+  return (a, b, c) => satF(hsv2rgb(h0 + (h1 - h0) * a, 0.15 + 0.85 * b, 0.1 + 0.9 * c));
+}
+
+// ───────────── view ─────────────
+for (const b of document.querySelectorAll('#viewSeg button')) b.onclick = () => {
+  state.view = b.dataset.v; document.querySelectorAll('#viewSeg button').forEach(x => x.classList.toggle('on', x === b)); setupView(); };
+$('pos').addEventListener('input', () => { showPos(); loadView(); });
+function axisList() {
+  const a = chVols()[0], g = a.g;
+  if (state.view === 'inline') return g.uil.map((v, i) => [i, v]);
+  if (state.view === 'xline') return g.uxl.map((v, i) => [i, v]);
+  return Array.from({length: a.ns}, (_, s) => [s, tms(a, s)]);
+}
+function setupView() {
+  if (gridCheck()) return;
+  const L = state.axis = axisList(); let k = L.findIndex(([i]) => i === state.pos[state.view]);
+  if (k < 0) k = Math.floor(L.length / 2);
+  $('pos').max = Math.max(0, L.length - 1); $('pos').value = k; showPos(); loadView();
+}
+function showPos() { const e = state.axis && state.axis[+$('pos').value]; if (!e) return; state.pos[state.view] = e[0];
+  $('posLabel').textContent = state.view === 'inline' ? `Inline ${e[1]}` : state.view === 'xline' ? `Crossline ${e[1]}` : `${+e[1].toFixed(2)} ms`; }
+async function loadView() {
+  if (gridCheck()) return;
+  viewToken.cancel = true; const token = viewToken = {cancel: false}; clearTimeout(sliceTimer);
+  const vs = chVols(), a = vs[0], g = a.g, p = state.pos[state.view];
+  if (state.view === 'time') {
+    const chans = vs.map(v => { const k = Math.min(v.nsd - 1, Math.round(p / v.dec)), im = new Float32Array(g.nil * g.nxl).fill(NaN);
+      for (let i = 0; i < v.g.grid.length; i++) { const t = v.g.grid[i]; if (t >= 0) im[i] = v.prev[t * v.nsd + k]; } return im; });
+    setImg({ch: chans, w: g.nxl, h: g.nil, kind: 'time', exact: vs.every(v => v.dec === 1)});
+    if (!state.img.exact) sliceTimer = setTimeout(async () => {
+      const ex = [];
+      for (const v of vs) { const s = await readTimeSlice(v, p, token); if (!s || token.cancel) return;
+        const im = new Float32Array(g.nil * g.nxl).fill(NaN);
+        for (let i = 0; i < v.g.grid.length; i++) { const t = v.g.grid[i]; if (t >= 0) im[i] = s[t]; } ex.push(im); }
+      setImg({ch: ex, w: g.nxl, h: g.nil, kind: 'time', exact: true});
+    }, 450);
+    return;
+  }
+  const chans = [];
+  for (const v of vs) {
+    const trs = [];
+    if (state.view === 'inline') for (let j = 0; j < g.nxl; j++) trs.push(v.g.grid[p * g.nxl + j]);
+    else for (let i = 0; i < g.nil; i++) trs.push(v.g.grid[i * g.nxl + p]);
+    const tr = await readTraces(v, trs); if (token.cancel) return;
+    const w = trs.length, im = new Float32Array(w * a.ns).fill(NaN);
+    trs.forEach((t, x) => { const d = tr.get(t); if (d) for (let s = 0; s < a.ns; s++) im[s * w + x] = d[s]; });
+    chans.push(im);
+  }
+  setImg({ch: chans, w: state.view === 'inline' ? g.nxl : g.nil, h: a.ns, kind: state.view, exact: true});
+}
+
+const MARG = {l: 64, r: 12, t: 12, b: 40}, KEYW = 190;
+function paint() {
+  const im = state.img; if (!im || gridCheck()) return;
+  const vs = chVols(), a = vs[0], g = a.g;
+  const cv = $('cv'), dpr = window.devicePixelRatio || 1, W = cv.clientWidth;
+  let Hh = Math.max(380, Math.min(720, Math.round((W - KEYW) * (im.kind === 'time' ? 0.68 : 0.55))));
+  if (window.innerWidth > 880) { const pan = cv.parentElement, extra = pan.offsetHeight - cv.offsetHeight;
+    Hh = Math.max(300, Math.min(Hh, window.innerHeight - extra - 24)); }
+  cv.style.height = Hh + 'px'; cv.width = W * dpr; cv.height = Hh * dpr;
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const css = getComputedStyle(document.documentElement);
+  ctx.fillStyle = css.getPropertyValue('--panel'); ctx.fillRect(0, 0, W, Hh);
+  const rngs = [0, 1, 2].map(chanRange);
+  rngs.forEach((r, k) => { const e = $('rng' + k); if (e) e.textContent = `${CH[k].lo}–${CH[k].hi} % → ${r[0].toPrecision(4)} to ${r[1].toPrecision(4)}`; });
+  const f = blender(false), n = im.w * im.h;
+  const off = document.createElement('canvas'); off.width = im.w; off.height = im.h;
+  const oc = off.getContext('2d'), id = oc.createImageData(im.w, im.h);
+  for (let i = 0; i < n; i++) {
+    const p = [0, 0, 0]; let bad = false;
+    for (let k = 0; k < 3; k++) { const v = im.ch[k][i]; if (!Number.isFinite(v)) { bad = true; break; }
+      let q = (v - rngs[k][0]) / (rngs[k][1] - rngs[k][0] || 1e-12); q = q < 0 ? 0 : q > 1 ? 1 : q; p[k] = CH[k].inv ? 1 - q : q; }
+    const o = i * 4; if (bad) { id.data[o + 3] = 0; continue; }
+    const c = f(p[0], p[1], p[2]);
+    id.data[o] = c[0] * 255; id.data[o + 1] = c[1] * 255; id.data[o + 2] = c[2] * 255; id.data[o + 3] = 255;
+  }
+  oc.putImageData(id, 0, 0);
+  const pw = W - MARG.l - MARG.r - KEYW, ph = Hh - MARG.t - MARG.b;
+  const flip = im.kind === 'time' && $('flipV').checked;
+  ctx.imageSmoothingEnabled = false;
+  if (flip) { ctx.save(); ctx.translate(0, 2 * MARG.t + ph); ctx.scale(1, -1); ctx.drawImage(off, MARG.l, MARG.t, pw, ph); ctx.restore(); }
+  else ctx.drawImage(off, MARG.l, MARG.t, pw, ph);
+  // axes
+  const xv = i => im.kind === 'xline' ? g.uil[i] : g.uxl[i], yv = i => im.kind === 'time' ? g.uil[i] : tms(a, i);
+  ctx.fillStyle = css.getPropertyValue('--muted'); ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let k = 0; k <= 6; k++) { const i = Math.round((im.w - 1) * k / 6); ctx.fillText(String(+(+xv(i)).toFixed(1)), MARG.l + (i + 0.5) / im.w * pw, MARG.t + ph + 4); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let k = 0; k <= 6; k++) { const i = Math.round((im.h - 1) * k / 6); ctx.fillText(String(+(+yv(i)).toFixed(1)), MARG.l - 6, MARG.t + ((flip ? im.h - 1 - i : i) + 0.5) / im.h * ph); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(im.kind === 'xline' ? 'Inline' : 'Crossline', MARG.l + pw / 2, Hh - 2);
+  ctx.save(); ctx.translate(14, MARG.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle';
+  ctx.fillText(im.kind === 'time' ? 'Inline' : 'Time (ms)', 0, 0); ctx.restore();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = css.getPropertyValue('--fg'); ctx.font = '600 13px system-ui, sans-serif';
+  ctx.fillText($('posLabel').textContent, MARG.l + 4, MARG.t + 4);
+  if (im.kind === 'time' && !im.exact) { ctx.fillStyle = css.getPropertyValue('--warn'); ctx.font = '12px system-ui, sans-serif';
+    ctx.fillText('preview — exact slice loading…', MARG.l + 4, MARG.t + 22); }
+  drawKey(ctx, W - KEYW + 6, MARG.t, KEYW - 12, vs, css);
+  $('savePng').disabled = false;
+}
+function drawKey(ctx, x0, y0, w, vs, css) {
+  const mode = $('mode').value, f = blender(true), n = 120, side = Math.min(w - 10, 150);
+  const off = document.createElement('canvas'); off.width = n; off.height = n;
+  const oc = off.getContext('2d'), id = oc.createImageData(n, n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const o = (y * n + x) * 4, xx = x / (n - 1), yy = 1 - y / (n - 1);
+    let c;
+    if (mode === 'hsv') c = f(xx, 1, yy);
+    else { const C = yy, B = xx - 0.5 * yy, A = 1 - B - C; if (A < 0 || B < 0 || C < 0) { id.data[o + 3] = 0; continue; } c = f(A, B, C); }
+    id.data[o] = c[0] * 255; id.data[o + 1] = c[1] * 255; id.data[o + 2] = c[2] * 255; id.data[o + 3] = 255;
+  }
+  oc.putImageData(id, 0, 0);
+  const kx = x0 + (w - side) / 2, ky = y0 + 36;
+  ctx.drawImage(off, kx, ky, side, side);
+  ctx.fillStyle = css.getPropertyValue('--fg'); ctx.font = '600 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Colour key', x0 + w / 2, y0);
+  ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = css.getPropertyValue('--muted');
+  const nm = k => vs[k].name.replace(/\.(sgy|segy|h)$/i, '').slice(0, 26);
+  if (mode === 'hsv') {
+    ctx.fillText(`hue → ${nm(0)}`, x0 + w / 2, ky + side + 4);
+    ctx.fillText(`saturation → ${nm(1)}`, x0 + w / 2, ky + side + 18);
+    ctx.fillText(`value (up) → ${nm(2)}`, x0 + w / 2, ky + side + 32);
+  } else {
+    ctx.fillStyle = css.getPropertyValue('--fg'); ctx.font = '700 15px system-ui, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('A', kx - 2, ky + side - 12);
+    ctx.textAlign = 'left'; ctx.fillText('B', kx + side + 2, ky + side - 12);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('C', kx + side / 2, ky - 2);
+    ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = css.getPropertyValue('--muted'); ctx.textBaseline = 'top';
+    ctx.textBaseline = 'top';
+    ctx.fillText(mode === 'ternary' ? 'corners = one volume only' : 'corners = one volume high', x0 + w / 2, ky + side + 36);
+  }
+  ctx.textAlign = 'left';
+  vs.forEach((v, k) => { ctx.fillText(`${'ABC'[k]}: ${CH[k].inv ? 'inverted, ' : ''}weight ${CH[k].w}`, x0, ky + side + 56 + 14 * k); });
+}
+$('savePng').onclick = () => {
+  const vs = chVols(); const tag = ($('posLabel').textContent || '').replace(/[^\w.-]+/g, '_');
+  $('cv').toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = `corender_${$('mode').value}_${tag}.png`; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000); }, 'image/png');
+};
+window.addEventListener('resize', () => state.img && paint());
+// start on the time-slice view
+document.querySelectorAll('#viewSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === 'time'));
+
+// ───────────── header viewer: check the inline / crossline byte locations ─────────────
+const EBCDIC = "                                                                  \u00e2\u00e4\u00e0\u00e1\u00e3\u00e5\u00e7\u00f1\u00a2.<(+|&\u00e9\u00ea\u00eb\u00e8\u00ed\u00ee\u00ef\u00ec\u00df!$*);\u00ac-/\u00c2\u00c4\u00c0\u00c1\u00c3\u00c5\u00c7\u00d1\u00a6,%_>?\u00f8\u00c9\u00ca\u00cb\u00c8\u00cd\u00ce\u00cf\u00cc`:#@'=\"\u00d8abcdefghi\u00ab\u00bb\u00f0\u00fd\u00fe\u00b1\u00b0jklmnopqr\u00aa\u00ba\u00e6\u00b8\u00c6\u00a4\u00b5~stuvwxyz\u00a1\u00bf\u00d0\u00dd\u00de\u00ae^\u00a3\u00a5\u00b7\u00a9\u00a7\u00b6\u00bc\u00bd\u00be[]\u00af\u00a8\u00b4\u00d7{ABCDEFGHI \u00f4\u00f6\u00f2\u00f3\u00f5}JKLMNOPQR\u00b9\u00fb\u00fc\u00f9\u00fa\u00ff\\\u00f7STUVWXYZ\u00b2\u00d4\u00d6\u00d2\u00d3\u00d50123456789\u00b3\u00db\u00dc\u00d9\u00da ";
+const HDR_BYTES = [[1, 'Trace sequence number within line'], [5, 'Trace sequence number within file'], [9, 'Field record number'],
+  [13, 'Trace number within field record'], [17, 'Energy source point number'], [21, 'CDP / ensemble number'],
+  [25, 'Trace number within ensemble'], [73, 'Source X'], [77, 'Source Y'], [81, 'Group X'], [85, 'Group Y'],
+  [181, 'CDP X'], [185, 'CDP Y'], [189, 'Inline (SEG-Y rev 1 standard)'], [193, 'Crossline (SEG-Y rev 1 standard)'],
+  [197, 'Shotpoint'], [221, 'Unassigned'], [225, 'Unassigned'], [233, 'Unassigned']];
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+$('hdrBtn').onclick = () => {
+  if (!state.vols.length) { setStatus('Load a file first, then view its headers.', 'warn'); return; }
+  const sel = $('hdrSel'), cur = Math.max(0, state.chan[0]);
+  sel.innerHTML = state.vols.map((v, i) => `<option value="${i}"${i === cur ? ' selected' : ''}>${esc(v.name)}</option>`).join('');
+  $('hdrDlg').showModal(); showHeaders();
+};
+$('hdrClose').onclick = () => $('hdrDlg').close();
+$('hdrSel').onchange = () => showHeaders();
+function useBytes(il, xl) {
+  $('ilb').value = il; $('xlb').value = xl; $('ilb').dispatchEvent(new Event('change')); showHeaders();
+}
+let hdrTok = 0;
+async function showHeaders() {
+  const v = state.vols[+$('hdrSel').value], body = $('hdrBody'), tok = ++hdrTok; if (!v) return;
+  const buf = new Uint8Array(await v.file.slice(0, 3200).arrayBuffer());
+  let nE = 0, nA = 0; for (const b of buf) { if (b === 0x40) nE++; else if (b === 0x20) nA++; }
+  const ebc = nE > nA; let txt = '';
+  for (let i = 0; i < buf.length; i++) { const b = buf[i];
+    txt += ebc ? EBCDIC[b] : (b >= 32 && b < 127 ? String.fromCharCode(b) : ' '); if (i % 80 === 79) txt += '\n'; }
+  const find = re => { const m = txt.match(re); return m ? +m[1] : null; };
+  const tIl = find(/\binline\b[^\n]*?\bbytes?\s*:?\s*(\d+)/i), tXl = find(/\b(?:x-?line|cross-?line)\b[^\n]*?\bbytes?\s*:?\s*(\d+)/i);
+  const picks = [...new Set([0, 1, 2, Math.floor(v.ntr / 2), v.ntr - 1])].filter(t => t >= 0 && t < v.ntr);
+  const dvs = [];
+  for (const t of picks) { const o = v.dataStart + t * v.traceLen; dvs.push(new DataView(await v.file.slice(o, o + 240).arrayBuffer())); }
+  if (tok !== hdrTok) return;
+  const ilb = +$('ilb').value, xlb = +$('xlb').value;
+  const rows = HDR_BYTES.map(([b, what]) => {
+    const vals = dvs.map(dv => dv.getInt32(b - 1, v.le)), tag = b === ilb ? ' — inline now' : b === xlb ? ' — crossline now' : '';
+    return `<tr class="${tag ? 'cur' : ''}"><td>${b}–${b + 3}</td><td>${what}${tag}</td>${vals.map(x => `<td>${x.toLocaleString()}</td>`).join('')}
+      <td><button type="button" data-il="${b}">inline</button> <button type="button" data-xl="${b}">crossline</button></td></tr>`;
+  }).join('');
+  const hint = tIl || tXl ? `<p><b>The text header says:</b> inline at byte ${tIl ?? '?'}, crossline at byte ${tXl ?? '?'}.
+      ${tIl && tXl && (tIl !== ilb || tXl !== xlb) ? `<button type="button" id="hdrUseText">Use ${tIl} and ${tXl}</button>` : tIl === ilb && tXl === xlb ? '<span class="ok">These are the bytes in use.</span>' : ''}</p>` : '';
+  body.innerHTML = `${hint}
+    <p class="muted">Text header (${ebc ? 'EBCDIC' : 'ASCII'}), ${v.le ? 'little' : 'big'}-endian, sample format ${v.fmt}, ${v.ns} samples at ${+v.dt.toFixed(4)} ms, ${v.ntr.toLocaleString()} traces.</p>
+    <pre>${esc(txt)}</pre>
+    <p class="muted">Trace headers (4-byte integers). In a sorted 3D volume the <b>inline</b> number usually stays the same over the first traces and the <b>crossline</b> number steps by 1. Using inline ${ilb} and crossline ${xlb} now.</p>
+    <div class="tblwrap"><table><thead><tr><th>Bytes</th><th>Usual meaning</th>${picks.map((t, k) => `<th>trace ${k === picks.length - 1 && t === v.ntr - 1 && k > 2 ? 'last' : t === Math.floor(v.ntr / 2) && k > 2 ? 'middle' : t + 1}</th>`).join('')}<th>Use as</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  body.querySelectorAll('button[data-il]').forEach(b => b.onclick = () => useBytes(+b.dataset.il, +$('xlb').value));
+  body.querySelectorAll('button[data-xl]').forEach(b => b.onclick = () => useBytes(+$('ilb').value, +b.dataset.xl));
+  const ut = $('hdrUseText'); if (ut) ut.onclick = () => useBytes(tIl, tXl);
+}
+
+// ───────────── reset the sliders under the image to their defaults ─────────────
+function repaintLook() { syncBlendUI(); (typeof schedulePaint === 'function' ? schedulePaint : paint)(); }
+function resetEl(el) {
+  if (el.type === 'checkbox') el.checked = el.defaultChecked;
+  else if (el.tagName === 'SELECT') for (const o of el.options) o.selected = o.defaultSelected;
+  else el.value = el.defaultValue;
+}
+$('resetLook').onclick = () => { document.querySelectorAll('.tweaks input, .tweaks select').forEach(resetEl); repaintLook(); };
+document.querySelectorAll('.tweaks input[type=range]').forEach(el => {
+  el.title = 'Double-click to reset this slider'; el.addEventListener('dblclick', () => { resetEl(el); repaintLook(); });
+});
+
+// ───────────── each new slice: optional smoothing, then its own statistics ─────────────
+// As in the ternary tool: scipy gaussian_filter(sigma=0.5) — kernel radius 2, edges mirrored
+// ('reflect'); missing traces (NaN) are left out. Then, with "the slice on screen", each
+// volume's colour range is taken from that slice's own values (percentiles below).
+const GK = (() => { const w = [-2, -1, 0, 1, 2].map(x => Math.exp(-x * x / (2 * 0.25))), t = w.reduce((a, b) => a + b); return w.map(x => x / t); })();
+function blur1(src, w, h, horiz) {
+  const out = new Float32Array(src.length), n = horiz ? w : h;
+  const refl = i => { while (i < 0 || i >= n) i = i < 0 ? -i - 1 : 2 * n - i - 1; return i; };
+  for (let r = 0; r < (horiz ? h : w); r++) for (let c = 0; c < n; c++) {
+    const at = j => horiz ? r * w + j : j * w + r, me = src[at(c)];
+    if (!Number.isFinite(me)) { out[at(c)] = me; continue; }
+    let sum = 0, wt = 0;
+    for (let d = -2; d <= 2; d++) { const v = src[at(refl(c + d))]; if (Number.isFinite(v)) { sum += GK[d + 2] * v; wt += GK[d + 2]; } }
+    out[at(c)] = sum / wt;
+  }
+  return out;
+}
+const sliceRange = () => $('rangeFrom').value === 'slice';
+function setImg(o) {
+  o.raw = o.raw || o.ch;
+  o.ch = $('smooth').checked ? o.raw.map(a => blur1(blur1(a, o.w, o.h, true), o.w, o.h, false)) : o.raw;
+  o.stats = o.ch.map(a => { const f = a.filter(Number.isFinite).sort(); return {sorted: f, min: f[0], max: f[f.length - 1]}; });
+  state.img = o;
+  if (sliceRange()) {  }
+  paint();
+}
+function reprocess() { if (state.img) setImg({...state.img}); }
+$('smooth').onchange = reprocess;
+$('rangeFrom').onchange = () => { CH.forEach(c => { c.vlo = c.vhi = null; }); reprocess();  };
+$('flipV').onchange = () => paint();
+buildChanUI();
+</script>
+</body>
+</html>
