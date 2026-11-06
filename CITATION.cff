@@ -18,7 +18,7 @@ authors:
     given-names: "Heather"
     affiliation: "University of Oklahoma"
     orcid: "https://orcid.org/0000-0003-3010-0195"
-version: "6.1"
+version: "6.3"
 date-released: "2026-11-06"
 license: CC-BY-SA-4.0
 repository-code: "https://github.com/hbedle-subsurface/seismic-corender"
