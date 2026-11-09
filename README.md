@@ -97,12 +97,25 @@ Dr. April Moreno-Ward and Dr. Heather Bedle, University of Oklahoma, with the
 
 Licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/): free to use, adapt and
 share, including in teaching, provided the source is credited and any adaptation is released under the
-same licence. Colour maps from the open-source Matplotlib library.
+same licence.
+
+## Open-source credits
+
+The tools load no outside code, but they include colour maps and palettes made by others:
+
+- **Colour maps** (advanced tool) from [Matplotlib](https://matplotlib.org/) (Hunter, 2007), including the
+  ColorBrewer maps and turbo. *This product includes color specifications and designs developed by
+  Cynthia Brewer (http://colorbrewer.org/).* turbo: copyright 2019 Google LLC, Apache License 2.0.
+  viridis, plasma, inferno and magma by Nathaniel Smith and Stéfan van der Walt; cividis by Nuñez et al.
+  (2018); cubehelix by Green (2011); coolwarm by Moreland (2009); twilight by Bastian Bechtold.
+- **Colour-blind-safe presets** after Wong (2011, *Nature Methods*) and Paul Tol's muted palette.
+
+Full list, references and licences: [open-source credits](https://hbedle-subsurface.github.io/seismic-corender/open_source.html).
 
 ## Versions
 
-- **Simple V5:** `SEGY_Corender_simple_V5.html`
-- **Advanced V6.4.2:** `SEGY_co-render_advanced_V6.4.2.html`. It adds the 3D view, transparency (a range
+- **Simple V5.1:** `SEGY_Corender_simple_V5.1.html`
+- **Advanced V6.4.3:** `SEGY_co-render_advanced_V6.4.3.html`. It adds the 3D view, transparency (a range
   around zero or both extremes), north arrow, scale bar, vertical stretch, the shared-range option, easier
   3D navigation, a colour key you can hide, reset buttons for the ranges, 2D zoom and hover readout, cropping (in 2D and 3D) and an enlarged view.
 

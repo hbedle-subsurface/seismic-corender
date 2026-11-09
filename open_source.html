@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open-Source Credits</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2330; --muted: #5b6475;
+    --line: #dde2ea; --accent: #0a7f45;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d0f17; --panel: #161925; --fg: #e6e8f0; --muted: #a3a9bb;
+      --line: #2a2e42; --accent: #00b86b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0f17; --panel: #161925; --fg: #e6e8f0; --muted: #a3a9bb;
+    --line: #2a2e42; --accent: #00b86b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 36px 16px 24px; }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; }
+  h2 { font-size: 1.1rem; margin: 26px 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin: 10px 0; }
+  .card p { margin: 6px 0; }
+  .card .who { font-weight: 600; }
+  .note { color: var(--muted); font-size: .9em; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .92em; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  code { font-size: .92em; }
+  a { color: var(--accent); }
+  footer { max-width: 880px; margin: 0 auto; padding: 18px 16px 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: .85em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Open-Source Credits</h1>
+  <p class="lead">The SEG-Y Co-render Tools load no outside code: everything, including the 3D view, is written
+    in the HTML files themselves. They do include colour maps and colour palettes created by other people,
+    listed here with their licences. Thank you to everyone below.</p>
+  <p class="note"><a href="index.html">← Back to the tools</a></p>
+
+  <h2>Colour maps (advanced tool)</h2>
+  <p>All 52 colour maps in the advanced tool are the colour maps of <b>Matplotlib</b>. Several of them were
+    designed by others and later included in Matplotlib:</p>
+
+  <div class="card">
+    <p class="who">Matplotlib</p>
+    <p>J. D. Hunter, 2007, Matplotlib: A 2D graphics environment: <i>Computing in Science &amp; Engineering</i>, 9(3), 90–95.</p>
+    <p>Copyright (c) 2012- Matplotlib Development Team; All Rights Reserved. Used under the
+      <a href="https://matplotlib.org/stable/project/license.html" target="_blank" rel="noopener">Matplotlib license</a>.</p>
+  </div>
+
+  <div class="card">
+    <p class="who">ColorBrewer: Blues, BrBG, BuPu, Greens, Oranges, PiYG, PRGn, PuBuGn, PuOr, Purples, RdBu, RdPu, RdYlBu, RdYlGn, Reds, Spectral, YlGnBu, YlOrBr, YlOrRd</p>
+    <p><b>This product includes color specifications and designs developed by Cynthia Brewer (<a href="http://colorbrewer.org/" target="_blank" rel="noopener">http://colorbrewer.org/</a>).</b></p>
+    <p>Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and The Pennsylvania State University. All rights reserved.
+      Used under the Apache-style ColorBrewer licence (as distributed with Matplotlib). “ColorBrewer” is used
+      here only to credit the source; it does not endorse these tools.</p>
+  </div>
+
+  <div class="card">
+    <p class="who">turbo</p>
+    <p>Designed by Anton Mikhailov, Google: <a href="https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/" target="_blank" rel="noopener">Turbo, an improved rainbow colormap for visualization</a> (2019).</p>
+    <p>Copyright 2019 Google LLC. Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache License, Version 2.0</a>.</p>
+  </div>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Colour maps</th><th>Designed by</th><th>Terms</th></tr></thead>
+    <tbody>
+      <tr><td>viridis, plasma, inferno, magma</td><td>Nathaniel J. Smith and Stéfan van der Walt (with Eric Firing), 2015</td><td>Public domain (CC0)</td></tr>
+      <tr><td>cividis</td><td>J. R. Nuñez, C. R. Anderton and R. S. Renslow, 2018, <i>PLOS ONE</i>, 13(7), e0199239</td><td>Matplotlib license</td></tr>
+      <tr><td>cubehelix</td><td>D. A. Green, 2011, <i>Bulletin of the Astronomical Society of India</i>, 39, 289–295</td><td>Matplotlib license</td></tr>
+      <tr><td>coolwarm</td><td>K. Moreland, 2009, Diverging color maps for scientific visualization, <i>Advances in Visual Computing</i> (ISVC 2009)</td><td>Matplotlib license</td></tr>
+      <tr><td>twilight, twilight_shifted</td><td>Bastian Bechtold</td><td>Matplotlib license</td></tr>
+      <tr><td>gray, seismic, bwr, hsv, bone, pink, copper, afmhot, hot, winter, summer, autumn, spring, cool, rainbow, gist_rainbow, gist_earth, gist_ncar, nipy_spectral, terrain, Wistia</td><td>Matplotlib and its contributors</td><td>Matplotlib license</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Reversed versions (names ending in <code>_r</code>) and the “black → colour” ramps are made from these in the tool.</p>
+
+  <h2>Colour palettes (simple and advanced tools)</h2>
+  <div class="card">
+    <p class="who">Colour-blind-safe corner colours (blue · orange · green, and sky · vermillion · yellow)</p>
+    <p>After B. Wong, 2011, Points of view: Color blindness: <i>Nature Methods</i>, 8, 441.</p>
+  </div>
+  <div class="card">
+    <p class="who">Muted corner colours (rose · teal · sand)</p>
+    <p>After P. Tol, <a href="https://personal.sron.nl/~pault/" target="_blank" rel="noopener">Colour schemes</a> (SRON technical note), muted palette.</p>
+  </div>
+
+  <h2>Methods (written for these tools, no code copied)</h2>
+  <ul>
+    <li><b>Colour conversions</b> follow the sRGB (IEC 61966-2-1) and CIE L*a*b* standards, with the conversion
+      constants used in <a href="https://scikit-image.org/" target="_blank" rel="noopener">scikit-image</a>, so the colours match our Python tools.</li>
+    <li><b>Light smoothing</b> is a Gaussian filter (σ 0.5) that matches SciPy's <code>gaussian_filter</code>.</li>
+    <li><b>SEG-Y reading</b> follows the SEG-Y standard of the Society of Exploration Geophysicists.</li>
+    <li><b>The 3D view</b> uses the browser's built-in WebGL.</li>
+  </ul>
+</main>
+<footer>
+  <p>SEG-Y Co-render Tools · Dr. April Moreno-Ward and Dr. Heather Bedle, University of Oklahoma, with the
+    <a href="https://www.ou.edu/mcee/labs/aaspi" target="_blank" rel="noopener">AASPI</a> consortium ·
+    licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+    The colour maps and palettes above keep their own licences.</p>
+</footer>
+</body>
+</html>
