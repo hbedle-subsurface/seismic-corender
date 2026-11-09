@@ -5,7 +5,7 @@
 Two browser tools for **co-rendering three seismic attribute volumes as one colour image**, so you can
 see how the attributes relate at every point instead of flipping between three separate displays.
 They were built for teaching at the University of Oklahoma, with the AASPI consortium, and use the
-same blending as our Ternary Colormap Tool.
+same blending as our color blending tool.
 
 - **Nothing to install.** Each tool is a single HTML file. Open the link above, or download a file and
   double-click it to use it offline in Chrome or Edge.
