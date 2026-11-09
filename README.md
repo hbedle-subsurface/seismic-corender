@@ -4,8 +4,7 @@
 
 Two browser tools for **co-rendering three seismic attribute volumes as one colour image**, so you can
 see how the attributes relate at every point instead of flipping between three separate displays.
-They were built for teaching at the University of Oklahoma, with the AASPI consortium, and use the
-same blending as our color blending tool.
+They were built for teaching at the University of Oklahoma, with the AASPI consortium.
 
 - **Nothing to install.** Each tool is a single HTML file. Open the link above, or download a file and
   double-click it to use it offline in Chrome or Edge.
@@ -26,7 +25,7 @@ where three separate maps would leave you to line it up in your head.
 | Blending | Direct RGB, ternary (LAB), HSV | Same, plus a colour map per volume, and base + overlay |
 | Ranges | Clip % per volume | Histogram per volume: drag the lines, or type values |
 | Views | Inline, crossline, time slice | Same, plus a **3D view** of all three together |
-| Extras | Colour-blind-safe presets, colour key, save as PNG | Transparency, your own `.alut` colour maps, north arrow, scale bar, vertical exaggeration |
+| Extras | Colour-blind-safe presets, colour key, save as PNG | Transparency, your own `.alut` colour maps, north arrow, scale bar, vertical stretch, zoom and hover readout, crop, enlarged view |
 
 New to co-rendering? Start with **Simple**.
 
@@ -44,6 +43,15 @@ New to co-rendering? Start with **Simple**.
 **2D views:** use the slider. In the advanced tool you can also type an inline, crossline or time (ms) in
 the box next to it and press Enter.
 
+**Zoom, hover and crop in 2D** (advanced tool): scroll to zoom toward the mouse, drag to move around
+when zoomed in, and double-click to reset the zoom. Hover to see the inline, crossline, time and each
+volume's value under the mouse. To crop, click **✂ Crop** and drag a box, or type the limits in the
+**Crop** row. The crop carries over to the other views, including 3D, where you can also type inline,
+crossline and time limits. **Show all** goes back.
+
+**Enlarge** (advanced tool) opens the picture on its own, filling the browser window, with just the
+controls it needs. Rotate and zoom in 3D as usual there. **✕ Close** or Esc goes back.
+
 **3D view** (advanced tool, **3D** button):
 
 | To | Do this |
@@ -55,7 +63,7 @@ the box next to it and press Enter.
 | Start over | Double-click, **Reset view**, or press **0** |
 | Move a panel | Its slider, or type a line number or time |
 
-Tick **Inline**, **Crossline** and **Time slice** in any combination. **Vertical exaggeration** and
+Tick **Inline**, **Crossline** and **Time slice** in any combination. **Vertical stretch** and
 **Panel opacity** are above the view.
 
 ## Good to know
@@ -66,14 +74,16 @@ Tick **Inline**, **Crossline** and **Time slice** in any combination. **Vertical
 - **Separate or shared range** (advanced tool). For volumes of the same kind, such as spectral components, choose
   **one shared range for all**, so a component with less energy stays dimmer instead of being
   stretched to look as strong as the others.
-- **Range from the slice or the whole volume.** By default each slice gets its own 1–99 % range, as in
-  the Ternary Colormap Tool. In the advanced tool, a range you set by hand is kept from slice to slice.
+- **Range from the slice or the whole volume.** By default each slice gets its own 1–99 % range, which clips the
+  extreme 1 % at each end so a few outliers don't wash out the colours. In the advanced tool you can switch
+  the default to the true minimum to maximum, a range you set by hand is kept from slice to slice, and
+  **Reset to default** or **Reset all ranges** puts things back.
 - **Transparency.** In the advanced tool, any volume can have a see-through range, shown as dashed
   blue lines on its histogram. You can see through those parts to the panels behind in 3D.
 - **North arrow and scale bar** (advanced tool) come from the X/Y coordinates in the trace headers. These are map-grid
-  coordinates, so the arrow shows **grid north** of that coordinate system, not true north. Vertical
-  exaggeration converts time to depth with a velocity you can set (2,000 m/s by default).
-- **Two-way traveltime** is assumed for time-to-depth (depth = time × velocity ÷ 2).
+  coordinates, so the arrow shows **grid north** of that coordinate system, not true north.
+- **Vertical stretch** makes sections and the 3D box taller or flatter. It's a display stretch,
+  not a true vertical exaggeration, because the files don't say how fast sound travelled.
 
 ## Citing
 
@@ -92,7 +102,8 @@ same licence. Colour maps from the open-source Matplotlib library.
 ## Versions
 
 - **Simple V5:** `SEGY_Corender_simple_V5.html`
-- **Advanced V6.3:** `SEGY_co-render_advanced_V6.3.html`. It adds the 3D view, transparency, north arrow,
-  scale bar, vertical exaggeration, the shared-range option and easier 3D navigation.
+- **Advanced V6.4.2:** `SEGY_co-render_advanced_V6.4.2.html`. It adds the 3D view, transparency (a range
+  around zero or both extremes), north arrow, scale bar, vertical stretch, the shared-range option, easier
+  3D navigation, a colour key you can hide, reset buttons for the ranges, 2D zoom and hover readout, cropping (in 2D and 3D) and an enlarged view.
 
 Older files stay in the repository, so earlier links keep working.

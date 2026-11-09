@@ -5,7 +5,7 @@ title: "SEG-Y Co-render Tools"
 abstract: >-
   Two standalone browser tools (simple and advanced) for co-rendering three seismic
   attribute volumes (SEG-Y) as one colour image, using direct RGB, ternary (LAB) or HSV
-  blending as in the Ternary Colormap Tool, with inline, crossline and time-slice views.
+  blending, with inline, crossline and time-slice views.
   The advanced tool adds per-volume histograms and colour maps, a base + overlay mode,
   custom .alut colour maps, per-volume transparency and a 3D view of inline, crossline
   and time-slice panels. Everything runs in the browser; data are never uploaded.
@@ -18,7 +18,7 @@ authors:
     given-names: "Heather"
     affiliation: "University of Oklahoma"
     orcid: "https://orcid.org/0000-0003-3010-0195"
-version: "6.3"
+version: "6.4.2"
 date-released: "2026-11-06"
 license: CC-BY-SA-4.0
 repository-code: "https://github.com/hbedle-subsurface/seismic-corender"
